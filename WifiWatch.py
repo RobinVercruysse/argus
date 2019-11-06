@@ -77,9 +77,8 @@ def handle_packet(p_packet: Packet):
     dot11handler.handle_packet(p_packet)
 
 
-channel = 1
-#for channel in range(1, 14):
 while True:
-    print('sniffing channel ' + str(channel))
-    os.system('iwconfig ' + interface + ' channel ' + str(channel))
-    sniff(timeout=5, prn=handle_packet, iface=interface)
+    for channel in range(1, 14):
+        print('sniffing channel ' + str(channel))
+        os.system('iwconfig ' + interface + ' channel ' + str(channel))
+        sniff(timeout=5, prn=handle_packet, iface=interface)
