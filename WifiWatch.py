@@ -1,11 +1,18 @@
 from scapy.all import *
 from sys import argv
-from scapy.layers.bluetooth import *
+# from scapy.layers.bluetooth import *
 from scapy.layers.dot11 import *
 from Dot11Handler import Dot11Handler
-from wirelesswatch.dot11 import SignalEntry
+from wirelesswatch.persistence import PersistenceController
+from wirelesswatch.model import Spot
 
-devices = {}
+
+if os.geteuid() != 0:
+    print('Run as root')
+    exit(-1)
+interface = argv[1]
+persistenceController = PersistenceController(mysql_user=argv[2], mysql_password=argv[3])
+# devices = {}
 linemap = {}
 
 
@@ -17,20 +24,17 @@ def enter_monitor_mode(p_interface: str):
         'ip link set ' + p_interface + ' up')
 
 
-def handle_bt_packet(p_packet: HCI_Hdr):
-    if p_packet.haslayer(HCI_LE_Meta_Advertising_Reports):
-        reports = p_packet[HCI_LE_Meta_Advertising_Reports].reports
-        report: HCI_LE_Meta_Advertising_Report
-        for report in reports:
-            mac = report.addr
-            if mac not in devices:
-                devices[mac] = []
-                print('New device spotted: ' + mac)
+# def handle_bt_packet(p_packet: HCI_Hdr):
+#     if p_packet.haslayer(HCI_LE_Meta_Advertising_Reports):
+#         reports = p_packet[HCI_LE_Meta_Advertising_Reports].reports
+#         report: HCI_LE_Meta_Advertising_Report
+#         for report in reports:
+#             mac = report.addr
+#             if mac not in devices:
+#                 devices[mac] = []
+#                 print('New device spotted: ' + mac)
 
-interface = argv[1]
-if os.geteuid() != 0:
-    print('Run as root')
-    exit(-1)
+
 
 # bt = BluetoothHCISocket(0)
 # bt.sr(HCI_Hdr()/HCI_Command_Hdr()/HCI_Cmd_LE_Set_Scan_Parameters(type=1))
@@ -47,38 +51,38 @@ fig = plt.figure()
 ax = fig.add_subplot(111)
 fig.canvas.draw()
 plt.show(block=False)
+current_channel = 0
 
 
-def signal_callback(mac: str, signal_entry: SignalEntry):
-    if mac not in linemap:
+def packet_callback(p_packet: Packet):
+    spot: Spot = Dot11Handler.build_spot(current_channel, p_packet)
+    if spot is None:
+        return
+    persistenceController.spot(spot)
+    if spot.transmitter is None or spot.sig == 0:
+        return
+    if spot.transmitter not in linemap:
         line, = ax.plot([], [])
-        line.set_label(mac)
+        line.set_label(spot.transmitter)
         fig.legend()
-        linemap[mac] = [[], [], line]
-    xdata = linemap[mac][0]
-    ydata = linemap[mac][1]
-    xdata.append(signal_entry.timestamp)
-    ydata.append(signal_entry.signal)
-    line = linemap[mac][2]
+        linemap[spot.transmitter] = [[], [], line]
+    xdata = linemap[spot.transmitter][0]
+    ydata = linemap[spot.transmitter][1]
+    xdata.append(spot.time)
+    ydata.append(spot.sig)
+    line = linemap[spot.transmitter][2]
     line.set_xdata(xdata)
     line.set_ydata(ydata)
-    linemap[mac][0] = xdata
-    linemap[mac][1] = ydata
+    linemap[spot.transmitter][0] = xdata
+    linemap[spot.transmitter][1] = ydata
     ax.relim()
     ax.autoscale_view(True, True, True)
     fig.canvas.draw()
     fig.canvas.flush_events()
 
 
-dot11handler = Dot11Handler(signal_callback)
-
-
-def handle_packet(p_packet: Packet):
-    dot11handler.handle_packet(p_packet)
-
-
 while True:
-    for channel in range(1, 14):
-        print('sniffing channel ' + str(channel))
-        os.system('iwconfig ' + interface + ' channel ' + str(channel))
-        sniff(timeout=5, prn=handle_packet, iface=interface)
+    for current_channel in range(1, 14):
+        print('sniffing channel ' + str(current_channel))
+        os.system('iwconfig ' + interface + ' channel ' + str(current_channel))
+        sniff(timeout=5, prn=packet_callback, iface=interface)
