@@ -10,9 +10,17 @@ services:
       MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
       MYSQL_DATABASE: "${MYSQL_DATABASE}"
     volumes:
-      - ./mount:/docker-entrypoint-initdb.d
+      - ./mount/mysql:/docker-entrypoint-initdb.d
     ports:
       - 3306:3306
+  mq:
+    image: rabbitmq:3-management
+    restart: always
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ./mount/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
   adminer:
     image: adminer
     restart: always

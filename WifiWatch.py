@@ -11,7 +11,7 @@ if os.geteuid() != 0:
     print('Run as root')
     exit(-1)
 interface = argv[1]
-persistenceController = PersistenceController(mysql_user=argv[2], mysql_password=argv[3])
+persistenceController = PersistenceController(mysql_user=argv[2], mysql_password=argv[3], rabbitmq_user=argv[4], rabbitmq_password=argv[5])
 # devices = {}
 linemap = {}
 
@@ -47,10 +47,10 @@ enter_monitor_mode(interface)
 
 
 
-fig = plt.figure()
-ax = fig.add_subplot(111)
-fig.canvas.draw()
-plt.show(block=False)
+# fig = plt.figure()
+# ax = fig.add_subplot(111)
+# fig.canvas.draw()
+# plt.show(block=False)
 current_channel = 0
 
 
@@ -59,26 +59,26 @@ def packet_callback(p_packet: Packet):
     if spot is None:
         return
     persistenceController.spot(spot)
-    if spot.transmitter is None or spot.sig == 0:
-        return
-    if spot.transmitter not in linemap:
-        line, = ax.plot([], [])
-        line.set_label(spot.transmitter)
-        fig.legend()
-        linemap[spot.transmitter] = [[], [], line]
-    xdata = linemap[spot.transmitter][0]
-    ydata = linemap[spot.transmitter][1]
-    xdata.append(spot.time)
-    ydata.append(spot.sig)
-    line = linemap[spot.transmitter][2]
-    line.set_xdata(xdata)
-    line.set_ydata(ydata)
-    linemap[spot.transmitter][0] = xdata
-    linemap[spot.transmitter][1] = ydata
-    ax.relim()
-    ax.autoscale_view(True, True, True)
-    fig.canvas.draw()
-    fig.canvas.flush_events()
+    # if spot.transmitter is None or spot.sig == 0:
+    #     return
+    # if spot.transmitter not in linemap:
+    #     line, = ax.plot([], [])
+    #     line.set_label(spot.transmitter)
+    #     fig.legend()
+    #     linemap[spot.transmitter] = [[], [], line]
+    # xdata = linemap[spot.transmitter][0]
+    # ydata = linemap[spot.transmitter][1]
+    # xdata.append(spot.time)
+    # ydata.append(spot.sig)
+    # line = linemap[spot.transmitter][2]
+    # line.set_xdata(xdata)
+    # line.set_ydata(ydata)
+    # linemap[spot.transmitter][0] = xdata
+    # linemap[spot.transmitter][1] = ydata
+    # ax.relim()
+    # ax.autoscale_view(True, True, True)
+    # fig.canvas.draw()
+    # fig.canvas.flush_events()
 
 
 while True:
