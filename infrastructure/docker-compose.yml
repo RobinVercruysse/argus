@@ -19,6 +19,7 @@ services:
     ports:
       - 5672:5672
       - 15672:15672
+      - 15674:15674
     volumes:
       - ./mount/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
   adminer:

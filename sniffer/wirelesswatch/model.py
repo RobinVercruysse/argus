@@ -11,8 +11,7 @@ class Spot:
         self.frame_type: int = frame_type
         self.frame_subtype: int = frame_subtype
         self.channel: int = channel
-        self.transmitter_name: str = transmitter_name
-
+        self.transmitter_name: str = str(transmitter_name)
 
 class Station:
     def __init__(self, mac: str):

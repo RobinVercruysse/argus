@@ -2,7 +2,8 @@ from typing import Dict
 from wirelesswatch.model import Station, Spot
 import pymysql
 from pika import BlockingConnection, ConnectionParameters, PlainCredentials
-from pika.channel import Channel
+from pika.adapters.blocking_connection import BlockingChannel
+from json import dumps
 
 
 class MySQLConnector:
@@ -34,11 +35,11 @@ class RabbitMQConnector:
         self.password = password
         self.connection = BlockingConnection(
             ConnectionParameters(host='::1', credentials=PlainCredentials(username=self.user, password=self.password)))
-        self.channel: Channel = self.connection.channel()
-        self.channel.queue_declare(queue='spots')
+        self.channel: BlockingChannel = self.connection.channel()
+        self.channel.queue_declare(queue='spots', durable=True)
 
     def push_spot(self, spot: Spot):
-        self.channel.basic_publish(exchange='', routing_key='spots', body='Spot'.encode('utf-8'))
+        self.channel.basic_publish(exchange='', routing_key='spots', body=dumps(spot.__dict__).encode('UTF-8'))
 
     def close(self):
         self.connection.close()
@@ -57,7 +58,6 @@ class PersistenceController:
         self.spot_station(spot.transmitter, spot.transmitter_name, spot)
         self.spot_station(spot.receiver, str(None), spot)
         self.mq_connector.push_spot(spot)
-        # self.database_connector.persist_spot(spot)
 
     def spot_station(self, mac: str, name: str, spot: Spot):
         if mac is None:

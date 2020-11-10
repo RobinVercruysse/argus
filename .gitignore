@@ -1,2 +1,6 @@
 venv/
 .idea/
+.run/
+__pycache__/
+*.iml
+target/

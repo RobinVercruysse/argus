@@ -2,3 +2,5 @@ scapy
 matplotlib
 pymysql
 pika
+pandas
+networkx

@@ -18,7 +18,6 @@ linemap = {}
 
 def enter_monitor_mode(p_interface: str):
     os.system(
-        'service network-manager stop && '
         'ip link set ' + p_interface + ' down && '
         'iwconfig ' + p_interface + ' mode monitor && '
         'ip link set ' + p_interface + ' up')
@@ -85,4 +84,4 @@ while True:
     for current_channel in range(1, 14):
         print('sniffing channel ' + str(current_channel))
         os.system('iwconfig ' + interface + ' channel ' + str(current_channel))
-        sniff(timeout=5, prn=packet_callback, iface=interface)
+        sniff(timeout=None, prn=packet_callback, iface=interface)
